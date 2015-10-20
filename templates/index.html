@@ -1,0 +1,149 @@
+<html>
+<head><title>Test front page!</title>
+<link href="/static/examples.css" rel="stylesheet" type="text/css">
+<script src='/static/jquery-1.10.2.min.js' type='text/javascript'></script>
+<script src='/static/jquery.flot.js' type='text/javascript'></script>
+<script type='text/javascript'>
+function worker() {
+	// Set up the asynchronous request
+	$$.ajax({ url: "/pulse" })
+		.done(function(data, reqStatus) {
+			// reqStatus may indicate an error but we ignore that here
+			obj = $$.parseJSON(data);
+			// update the time in the named span
+			$$('#BPM').text(obj.val1);
+			
+			$$('#SPO2').text(obj.val2);
+
+			// repeat the whole request/update process in 1000 msec
+			setTimeout(worker, 250);
+		}
+		);
+}
+
+// this calls the worker function when the document is fully loaded
+$$(worker)
+
+$$(function() {
+
+		// We use an inline data source in the example, usually data would
+		// be fetched from a server
+
+		var data = [],
+			totalPoints = 300;
+			
+		var dataO2 = [];
+		
+		while (data.length < totalPoints) {
+				y = 0;
+				data.push(y);
+			}
+			
+		while (dataO2.length < totalPoints) {
+				y = 0;
+				dataO2.push(y);
+			}
+
+		function getBPMData() {
+
+			data = data.slice(1);
+			
+			y = $$('#BPM').text();
+			
+			if (y < 60){
+				y = 60;
+			} else if (y > 160){
+				y = 120;
+			}
+			
+			data.push(y)
+			
+			// Zip the generated y values with the x values
+
+			var res = [];
+			for (var i = 0; i < data.length; ++i) {
+				res.push([i, data[i]])
+			}
+
+			return res;
+		}
+		
+		function getO2Data() {
+
+			dataO2 = dataO2.slice(1);
+			
+			y = parseFloat($$('#SPO2').text());
+			
+			if (y < 1){
+				y = 1;
+			} else if (y > 2){
+				y = 2;
+			}
+			
+			dataO2.push(y);
+			
+			// Zip the generated y values with the x values
+
+			var res = [];
+			for (var i = 0; i < dataO2.length; ++i) {
+				res.push([i, dataO2[i]])
+			}
+
+			return res;
+		}
+
+		var updateInterval = 30;
+
+		var plot = $$.plot("#placeholder", [ {label: "BPM", data: getBPMData()}, {label:"SpO2", data: getO2Data(), yaxis: 2} ], {
+			series: {
+				shadowSize: 0	// Drawing is faster without shadows
+			},
+			xaxes: [ { show: false } ],
+			yaxes: [ { min: 60, max: 120 }, {
+					min: 1, max: 2,
+					position: "right",
+				} ],
+			
+			colors: ["red","blue"]
+		});
+
+		function update() {
+			plot.setData(    [{ data: getBPMData(), label: "BPM" }, 
+                     { data: getO2Data(), label: "SpO2", yaxis: 2}
+                    ] 
+   			);
+
+			// Since the axes don't change, we don't need to call plot.setupGrid()
+			
+			plot.draw();
+			setTimeout(update, updateInterval);
+		}
+
+		update();
+
+		// Add the Flot version string to the footer
+
+		$$("#footer").append(" &ndash; " + "Flot " + $$.plot.version);
+	});
+
+</script>
+
+</head>
+<body>
+
+	<div id="header">
+			<h2>Patient Health Monitoring System</h2>
+	</div>
+	<div id="content">
+		<h3>BPM: <span id="BPM"/>unknown</span></h3>
+		<h3>SpO2: <span id="SPO2"/>unknown</span></h3>
+		<div class="demo-container">
+					<div id="placeholder" class="demo-placeholder"></div>
+				</div>
+	</div>
+	
+	<div id="footer">
+		Copyright &copy; 2013 Christian St. Cyr
+	</div>
+</body>
+</html>
